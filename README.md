@@ -163,3 +163,32 @@ The TCP server communicates using newline-delimited UTF-8 JSON messages.
 * `return` - Return a book copy (`{"book_id": 1, "member_id": 1}`).
 * `loans` - List all active loans.
 * `overdue` - List overdue loans.
+* `cat2_metadata` - Retrieve timetable subjects, slots, and relative exam days.
+* `collab_checkout` - Check out a textbook collaboratively (`{"book_id": 1, "subject_code": "CSE2004", "member1_id": 1, "slot1": "A1", "member2_id": 2, "slot2": "C1"}`).
+* `collab_request` - Post an open co-lending partner request (`{"book_id": 1, "subject_code": "CSE2004", "member_id": 1, "slot": "A1"}`).
+* `list_collab_requests` - List open co-lending requests looking for slot partners.
+* `accept_collab_request` - Pair with an open request (`{"request_id": 1, "joining_member_id": 2, "joining_slot": "C1"}`).
+* `collab_handover` - Confirm physical handover from Phase 1 student to Phase 2 student (`{"collab_id": 1}`).
+* `collab_return` - Return co-borrowed book to library (`{"collab_id": 1}`).
+* `active_collab_loans` - List currently active collaborative loans.
+* `all_collab_loans` - List all collaborative loans.
+
+---
+
+## 🤝 CAT-2 Open Book Collaborative Lending
+
+### The Problem
+During college CAT-2 Open Book Exams, demand for prescribed textbooks (such as Python Programming, C++, Discrete Mathematics, and Theory of Computation) spikes dramatically. Because library copies are limited, if one student checks out a copy for 14 days, other students have no access during their open-book exams.
+
+### The Solution: Slot-Based Co-Lending
+Universities schedule open-book exams by timetable slots (e.g. Slot A1, B1, C1, D1, E1, F1, A2, etc.) on **different exam dates**:
+* **Student 1** in **Slot A1** has their CAT-2 exam on **Day 1**.
+* **Student 2** in **Slot C1** has their CAT-2 exam on **Day 3**.
+
+Because their exams do not clash:
+1. **Phase 1 (Preparation & Exam 1)**: Student 1 holds the book until their exam is finished.
+2. **Handover Date**: Student 1 hands over the book to Student 2 on the scheduled handover date (Day 2).
+3. **Phase 2 (Preparation & Exam 2)**: Student 2 uses the book for their exam on Day 3.
+4. **Final Return**: Student 2 returns the book to the library after their exam.
+
+The system automatically validates that slots do not clash, calculates the non-conflicting handover schedule, tracks custody, and offers a **Matchmaker Board** for students looking for partners in alternate slots.

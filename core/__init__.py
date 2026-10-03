@@ -9,6 +9,9 @@ from core.config import (
     LOAN_DAYS,
     MAX_LOANS,
     FINE_PER_DAY,
+    CAT2_SUBJECTS,
+    CAT2_SLOTS,
+    SLOT_EXAM_DAYS,
 )
 
 __all__ = [
@@ -20,4 +23,7 @@ __all__ = [
     "LOAN_DAYS",
     "MAX_LOANS",
     "FINE_PER_DAY",
+    "CAT2_SUBJECTS",
+    "CAT2_SLOTS",
+    "SLOT_EXAM_DAYS",
 ]

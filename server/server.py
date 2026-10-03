@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Multithreaded TCP server for the library system.
+"""Multithreaded TCP server for the library system with CAT-2 Collaborative Lending.
 
 Every client connection gets its own thread. All database access goes through
 one shared Library object protected by a lock, so threads never interleave
@@ -25,17 +25,37 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from core.config import DB_FILE, DEFAULT_HOST, DEFAULT_PORT
+from core.config import (
+    CAT2_SLOTS,
+    CAT2_SUBJECTS,
+    DB_FILE,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    SLOT_EXAM_DAYS,
+)
 from core.database import Library
 
 DEMO_BOOKS = [
+    # General catalogue
     ("Dune", "Frank Herbert", "9780441172719", 2),
     ("The Hobbit", "J.R.R. Tolkien", "9780547928227", 3),
     ("Neuromancer", "William Gibson", "9780441569595", 1),
     ("Pride and Prejudice", "Jane Austen", "9780141439518", 2),
     ("Python Crash Course", "Eric Matthes", "9781593279288", 2),
+    # CAT-2 Open Book Specific Course Textbooks (limited copies for collaborative lending)
+    ("Python Programming: An Intro to Computer Science (CSE2004)", "John Zelle", "9781590282755", 1),
+    ("The C++ Programming Language (ECE2002)", "Bjarne Stroustrup", "9780321563842", 1),
+    ("Discrete Mathematics and Its Applications (MAT2002)", "Kenneth Rosen", "9780073383095", 1),
+    ("Introduction to the Theory of Computation (CSE3011)", "Michael Sipser", "9781133187790", 1),
+    ("Principles of Management (MGT2003)", "Harold Koontz", "9780070356078", 1),
 ]
-DEMO_MEMBERS = [("Asha Verma", "asha@example.com"), ("Ravi Patel", "ravi@example.com")]
+
+DEMO_MEMBERS = [
+    ("Asha Verma (Slot A1)", "asha@example.com"),
+    ("Ravi Patel (Slot C1)", "ravi@example.com"),
+    ("Sneha Roy (Slot B1)", "sneha@example.com"),
+    ("Arjun Kumar (Slot D1)", "arjun@example.com"),
+]
 
 
 def rows(result):
@@ -63,6 +83,20 @@ class LibraryServer:
             ),
             "loans": lambda a: rows(self.lib.active_loans()),
             "overdue": lambda a: rows(self.lib.overdue_loans()),
+            # CAT-2 Open Book Collaborative Lending Commands
+            "cat2_metadata": lambda a: {
+                "subjects": CAT2_SUBJECTS,
+                "slots": CAT2_SLOTS,
+                "slot_days": SLOT_EXAM_DAYS,
+            },
+            "collab_checkout": self.collab_checkout,
+            "collab_request": self.collab_request,
+            "list_collab_requests": lambda a: rows(self.lib.list_collab_requests(a.get("subject_code"))),
+            "accept_collab_request": self.accept_collab_request,
+            "collab_handover": lambda a: self.lib.collab_handover(int(a["collab_id"])),
+            "collab_return": lambda a: self.lib.collab_return(int(a["collab_id"])),
+            "active_collab_loans": lambda a: rows(self.lib.active_collab_loans()),
+            "all_collab_loans": lambda a: rows(self.lib.all_collab_loans()),
         }
 
     # -- commands that need validation ---------------------------------
@@ -78,6 +112,28 @@ class LibraryServer:
         if not name or "@" not in email:
             raise ValueError("Enter a name and a valid email address.")
         return self.lib.add_member(name, email)
+
+    def collab_checkout(self, a):
+        book_id = int(a["book_id"])
+        subject_code = str(a["subject_code"])
+        member1_id = int(a["member1_id"])
+        slot1 = str(a["slot1"])
+        member2_id = int(a["member2_id"])
+        slot2 = str(a["slot2"])
+        return self.lib.collab_checkout(book_id, subject_code, member1_id, slot1, member2_id, slot2)
+
+    def collab_request(self, a):
+        book_id = int(a["book_id"])
+        subject_code = str(a["subject_code"])
+        member_id = int(a["member_id"])
+        slot = str(a["slot"])
+        return self.lib.create_collab_request(book_id, subject_code, member_id, slot)
+
+    def accept_collab_request(self, a):
+        request_id = int(a["request_id"])
+        joining_member_id = int(a["joining_member_id"])
+        joining_slot = str(a["joining_slot"])
+        return self.lib.accept_collab_request(request_id, joining_member_id, joining_slot)
 
     # -- request handling ----------------------------------------------
     def process(self, line):
@@ -128,13 +184,15 @@ class LibraryServer:
 
 
 def seed_demo_data(lib):
-    if lib.search_books(""):
-        return
+    existing_books = {b["isbn"] for b in lib.search_books("")}
     for title, author, isbn, copies in DEMO_BOOKS:
-        lib.add_book(title, author, isbn, copies)
+        if isbn not in existing_books:
+            lib.add_book(title, author, isbn, copies)
+    existing_members = {m["email"] for m in lib.list_members()}
     for name, email in DEMO_MEMBERS:
-        lib.add_member(name, email)
-    print("Added demo books and members.")
+        if email not in existing_members:
+            lib.add_member(name, email)
+    print("Checked and updated demo books and members.")
 
 
 def main(args=None):
