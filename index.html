@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Town Library</title>
+  <style>
+    body { font-family: Helvetica, Arial, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; background: #f4f1ea; color: #222; }
+    h1 { background: #2c3e50; color: white; padding: .6rem 1rem; }
+    fieldset { border: 1px solid #bbb; margin-bottom: 1.5rem; padding: 1rem; }
+    label { display: block; margin: .5rem 0 .2rem; }
+    input[type=text], input[type=email] { width: 100%; max-width: 320px; padding: .35rem; }
+    button { margin-top: .8rem; padding: .4rem 1.2rem; }
+  </style>
+</head>
+<body>
+  <h1>Town Library</h1>
+
+  <!-- GET form: the search term travels in the URL (?q=...) -->
+  <fieldset>
+    <legend>Search the catalogue</legend>
+    <form action="/cgi-bin/search.py" method="get">
+      <label for="q">Title, author or ISBN (leave blank to list everything)</label>
+      <input type="text" id="q" name="q">
+      <br><button type="submit">Search</button>
+    </form>
+  </fieldset>
+
+  <!-- POST form: the data travels in the request body -->
+  <fieldset>
+    <legend>Become a member</legend>
+    <form action="/cgi-bin/register.py" method="post">
+      <label for="name">Full name</label>
+      <input type="text" id="name" name="name" required>
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+      <br><button type="submit">Register</button>
+    </form>
+  </fieldset>
+</body>
+</html>
